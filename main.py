@@ -1,7 +1,8 @@
 import pyxel
-import pygame
 import json
 import os
+import threading
+import simpleaudio as sa
 
 # Constants
 WINDOW_WIDTH = 256
@@ -12,7 +13,6 @@ PERFECT_THRESHOLD = 1
 GOOD_THRESHOLD = 5
 FPS = 60
 RESULT_DELAY = 2.0
-FADEOUT_DURATION = 2000  # Fadeout duration in milliseconds
 
 # Game class
 def load_sequences(filename):
@@ -24,14 +24,16 @@ def load_sequences(filename):
 class RhythmGame:
     def __init__(self):
         pyxel.init(WINDOW_WIDTH, WINDOW_HEIGHT, title="Rhythm Game")
-        pygame.mixer.init()
 
         # Load music and sequences
         self.sequences = load_sequences("sequences.json")
-        self.music_file = "starlightyellow.mp3"
+        self.music_file = "starlightyellow.wav"  # WAVファイルを指定
+        self.music_play = None
+        self.music_wave = None
+
         if os.path.exists(self.music_file):
-            pygame.mixer.music.load(self.music_file)
-        
+            self.music_wave = sa.WaveObject.from_wave_file(self.music_file)
+
         self.current_time = 0
         self.sequence_index = 0
         self.score = 0
@@ -39,9 +41,17 @@ class RhythmGame:
         self.judgement = ""
         self.result_time = None
         self.is_game_over = False
-        pyxel.mouse(True)
 
         pyxel.run(self.update, self.draw)
+
+    def start_music(self):
+        if self.music_wave:
+            self.music_play = self.music_wave.play()
+
+    def fadeout_music(self):
+        # simpleaudioはフェードアウトをサポートしていないため停止のみ行う
+        if self.music_play and self.music_play.is_playing():
+            self.music_play.stop()
 
     def update(self):
         if pyxel.btnp(pyxel.KEY_Q):
@@ -53,8 +63,8 @@ class RhythmGame:
             return
 
         # Start music
-        if self.current_time == 0 and os.path.exists(self.music_file):
-            pygame.mixer.music.play()
+        if self.current_time == 0 and self.music_play is None:
+            self.start_music()
 
         if self.sequence_index < len(self.sequences):
             sequence = self.sequences[self.sequence_index]
@@ -64,7 +74,7 @@ class RhythmGame:
                 if self.result_time is None:
                     self.result_time = self.current_time
                     self.is_game_over = True
-                    pygame.mixer.music.fadeout(FADEOUT_DURATION)
+                    self.fadeout_music()
                 return
 
             time_diff = self.current_time - sequence["time"]
@@ -95,6 +105,7 @@ class RhythmGame:
                 self.sequence_index += 1
 
         self.current_time += 1 / FPS
+
 
     def show_result(self):
         pyxel.cls(0)
