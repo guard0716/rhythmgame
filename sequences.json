@@ -1,0 +1,10 @@
+[
+    {"time": 2.0, "speed": 50},
+    {"time": 3.0, "speed": 50},
+    {"time": 5.0, "speed": 50},
+    {"time": 6.0, "speed": 50},
+    {"time": 7.0, "speed": 50},
+    {"time": 10.0, "speed": 50},
+    {"time": 15.0, "speed": 50},
+    {"time": "END"}
+]
